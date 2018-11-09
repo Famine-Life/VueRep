@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Vue axios 读取api.github.com展示用户信息</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- bootstrap -->
+    <link href="https://cdn.bootcss.com/twitter-bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <h1 style="text-align:center;">Vue axios 读取api.github.com展示用户信息</h1>
+    <hr>
+    <div id="app">
+       <div  style="width:800px;margin:0 auto">
+            <form  class="form-inline" id="search" @submit.prevent="onSubmit">
+                <div class="form-group">
+                    <label class="sr-only" for="exampleInputAmount">Famine-life</label>
+                    <div class="input-group">
+                        <div class="input-group-addon">输入github用户名：</div>
+                        <input class="form-control"  placeholder="famine-life"  id="username" type="text" v-model="username">
+                    </div>    
+                    <button class="btn btn-primary" id="btn">获取常用信息</button>
+                </div>
+            </form>
+            <div id="show_area">
+                <div class="alert alert-success" role="alert">information of {{username}}</div>
+                <div class="row">
+                    <div class="col-sm-12">
+                        <div class="thumbnail">
+                        <!-- v-bind加载图片 -->
+                        <img v-bind:src="result.avatar_url">
+                        <div class="caption">
+                            <ul class="list-group">
+                                <li class="list-group-item list-group-item-info">常用信息展示栏</li>
+                                <li class="list-group-item list-group-item-success">用户名：{{result.login}}</li>
+                                <li class="list-group-item list-group-item-info">介绍：{{result.bio}}</li>
+                                <li class="list-group-item list-group-item-warning">博客：{{result.blog}}</li>
+                                <li class="list-group-item list-group-item-danger">姓名：{{result.name}}</li>
+                                <li class="list-group-item list-group-item-success">地址：{{result.location}}</li>
+                                <li class="list-group-item list-group-item-info">followers：{{result.followers}}</li>
+                                <li class="list-group-item list-group-item-warning">following：{{result.following}}</li>
+                            </ul>
+                            <p><a href="#" class="btn btn-primary" role="button" @click="onShow">{{show_btn_value}}</a></p>
+                        </div>
+                        </div>
+                    </div>
+                </div>
+                <div  class="thumbnail" v-if="isShow">
+                    <!-- {{result}} -->
+                    <dl class="dl-horizontal"  v-for="(value, key) in result">
+                        <dt>{{key||"无"}}</dt>
+                        <dd>{{value||"无"}}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+   </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.5.17-beta.0/vue.js"></script>
+    <!-- jq看着用 -->
+    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.js"></script> 
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script>
+         var app = new Vue({
+            el: '#app',
+            data:{
+                    username:null,
+                    result:[],
+                    isShow:false,
+                    show_btn_value:"展示完整信息"
+            },
+            methods:{
+                onShow:function(){
+                    if(!this.isShow){
+                        this.isShow = true;
+                        this.show_btn_value ="隐藏下面信息";
+                    }else{
+                        this.isShow = false;
+                        this.show_btn_value="展示完整信息";
+                    }
+                },
+                onSubmit:function(){
+                    axios
+                        .get("https://api.github.com/users/"+this.username)
+                        .then(function(response) {
+                            app.result = response.data;
+                            console.log("succeed",app.result);
+                        })
+                        .catch(error => {
+                            console.log(error);
+                            this.errored = true;
+                        })
+                        .finally(() => this.loading = false);
+
+                    /**jQuery写法
+                    //jQuery.ajax( url [, settings ] )
+                    $.ajax({url:"https://api.github.com/users/"+this.username,
+                            method:"get",
+                            data:{
+                                username:"hello",
+                                password:"null"
+                            },
+                            success: function(data){
+                                console.log("succeed:",data);
+                                app.result=data;
+                                console.log("输出vue的data",app.result);
+                            },
+                            error: function(){
+                                console.log("error");
+                            }
+                    });
+                    */
+                },
+            }
+                            
+        });
+
+
+    </script>
+</body>
+</html>
