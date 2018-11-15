@@ -3,14 +3,19 @@
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Vue axios 读取api.github.com展示用户信息</title>
+    <title>读取github用户信息，并生成贡献图(Github Contributions on Canvas)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <!-- bootstrap -->
     <link href="https://cdn.bootcss.com/twitter-bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
-    <h1 style="text-align:center;">Vue axios 读取api.github.com展示用户信息</h1>
-    <hr>
+    <h1 style="text-align:center;">读取github用户信息，并生成贡献图(Github Contributions on Canvas)</h1>
+    <div style="text-align:center;">
+        <a  href="https://github.com/famine-life" target="_blank;">
+            <img src="https://img.shields.io/github/followers/famine-life.svg?style=social&label=Follow%20Me">    
+        </a>
+    </div>  
+        <hr>
     <div id="app">
        <div  style="width:800px;margin:0 auto">
             <form  class="form-inline" id="search" @submit.prevent="onSubmit">
@@ -40,6 +45,8 @@
                                 <li class="list-group-item list-group-item-success">地址：{{result.location}}</li>
                                 <li class="list-group-item list-group-item-info">followers：{{result.followers}}</li>
                                 <li class="list-group-item list-group-item-warning">following：{{result.following}}</li>
+                                <li class="list-group-item list-group-item-warning">创建时间：{{result.created_at}}</li>
+                                <li class="list-group-item list-group-item-warning">最后一次更新时间：{{result.updated_at}}</li>
                             </ul>
                             <p><a href="#" class="btn btn-primary" role="button" @click="onShow">{{show_btn_value}}</a></p>
                         </div>
@@ -57,15 +64,83 @@
         </div>
    </div>
 
+   <div name="contribution_show" style="text-align:center">
+       <div id="theme_btn" style="display: none">
+            <div style="text-align:center;" class="dropdown">
+                    切换主题:<button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                        默认
+                    <span class="caret"></span>
+                </button>
+                <ul style="left:50%" id="ul_list" class="dropdown-menu" aria-labelledby="dropdownMenu1">
+                    <li><a href="#contribution_show">默认：standard</a></li>
+                    <li><a href="#contribution_show">sunny</a></li>
+                    <li><a href="#contribution_show">pink</a></li>
+                    <li><a href="#contribution_show">halloween</a></li>
+                    <li><a href="#contribution_show">teal</a></li>
+                    <li><a href="#contribution_show">leftPad</a></li>
+                    <li><a href="#contribution_show">dracula</a></li>
+                    <li><a href="#contribution_show">blue</a></li>
+                    <li><a href="#contribution_show">panda</a></li>
+                    <li><a href="#contribution_show">YlGnBu</a></li>
+                </ul>
+            </div>
+        </div>
+        <!-- canvas -->
+        <canvas id="canvasEl" width="676" height="352"></canvas>
+    </div>
+    <div style="text-align:center;">made by@<a href="https://github.com/famine-life/VueRep">famine-life - VueRep</a></div>
+    
+    <!-- js引入 -->
+    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.js"></script>
+    <script src="https://cdn.bootcss.com/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment.js"></script>
+    <script src="js/draw.js?version=333"></script>
+    <script src="js/themes.js?version=233"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.5.17-beta.0/vue.js"></script>
-    <!-- jq看着用 -->
-    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.js"></script> 
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
     <script>
+
+       var canvasEl = document.getElementById("canvasEl");
+       //contributionData  api接口获取来的数据
+       var contributionData;
+       //用户名 默认famine-life
+       var input_username = "famine-life"; 
+       //input_username = $('#username').text();
+        console.log("username:",input_username);
+       //themeName 主题名字  默认standard
+       var themeName = "standard";
+       //下拉窗口对象
+       var dropListObj = $('.dropdown-toggle');
+       //开启下拉列表
+       dropListObj.dropdown();
+       var dropBtn = $('#dropdownMenu1');
+       var list = $('#ul_list li a');
+       //console.log(list[0]);
+       //console.log(list[0].text);
+       //console.log(dropBtn.text());
+    
+       $(document).delegate('#ul_list li a','click',function () {
+           //$(this)访问添加事件的元素
+           //console.log($(this).text());
+           dropBtn.text($(this).text());
+           themeName = dropBtn.text();
+            console.log(themeName);  
+           drawContributions(canvasEl, {
+                data: contributionData,
+                username: input_username,
+                themeName: themeName,
+                footerText: "Made by @sallar - github-contributions.now.sh"
+            })
+            //window.location.href="#contribution_show";
+       })
+    
+         
+         //=============================================================
+         //Vue
          var app = new Vue({
             el: '#app',
             data:{
-                    username:null,
+                    username:"famine-life",
                     result:[],
                     isShow:false,
                     show_btn_value:"展示完整信息"
@@ -111,10 +186,44 @@
                             }
                     });
                     */
+                   //  ajax 获取数据  
+                    // 借用下jq
+                    //jQuery.ajax( url [, settings ] )
+
+                input_username = this.username;
+                themeName
+                var theme_btn=$("#theme_btn");
+                theme_btn.css("display","block")
+                var responseData = (function() {
+                    var result;
+                    $.ajax({
+                        type:'GET',
+                        url:'https://github-contributions-api.now.sh/v1/'+input_username,
+                        dataType:'json',
+                        data:{},
+                        async:false,
+                        success:function(data){
+                            result = data;
+                        },
+                        error: function(){
+                            console.log("error");
+                        }
+                    });
+                    return result;
+                })();
+                         contributionData = responseData;
+                         console.log("contributionData",contributionData);
+
+                        drawContributions(canvasEl, {
+                            data: contributionData,
+                            username: input_username,
+                            themeName: themeName,
+                            footerText: "Made by @sallar - github-contributions.now.sh"
+                        }
+                    );
                 },
             }
-                            
-        });
+        })                
 
 
     </script>
